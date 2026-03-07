@@ -286,7 +286,7 @@ Resources:
               # Quicksight : peut créer des tableaux de bord basés sur les données Athena
               - Effect: Allow
                 Action:
-                  - quicksight:DescribeUsers
+                  - quicksight:DescribeUser
                   - quicksight:ListDashboards
                   - quicksight:CreateDashboard
                 Resource: '*'
