@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Infrastructure Data Lake AWS - Groupe 4
+  Crée les buckets S3 (Raw, Processed, Curated) avec
+  versioning et sécurité de base.
+
+# PARAMETERS — les paramètres pour personnaliser le déploiement
+
+Parameters:
+
+  ProjectName:
+    Type: String
+    Default: datalake
+    Description: Nom du projet, utilisé dans le nommage des ressources
+
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environnement (dev, prod...)
+
+  GroupName:
+    Type: String
+    Default: groupe1
+    Description: Nom du groupe, pour rendre les noms de buckets uniques
+
+# ----------------------------------------------------------
+# IAM ROLES 
+# ----------------------------------------------------------
+
+Resources:
+
+  # GLUE SERVICE ROLE
+  # Permet à Glue d'accéder aux buckets S3 pour lire les données brutes et écrire les données traitées
+  GlueServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-glue-service-role-${Environment}'
+
+      # Définit qui peut assumer ce rôle — dans ce cas, le service Glue
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      
+      ManagedPolicyArns:
+        # Politique gérée par AWS pour les tâches Glue
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+      
+      # Politiques personnalisées pour accéder aux buckets S3 spécifiques à ce projet
+      Policies:
+        - PolicyName: GlueS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Peut lire les données brutes dans Raw
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt RawBucket.Arn
+                  - !Sub '${RawBucket.Arn}/*'
+              # Peut lire et écrire dans Processed et Curated
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ProcessedBucket.Arn
+                  - !Sub '${ProcessedBucket.Arn}/*'
+                  - !GetAtt CuratedBucket.Arn
+                  - !Sub '${CuratedBucket.Arn}/*'
+
+  # ----------------------------------------------------------
+  # DATE LAKE ADMIN ROLE
+  # Permet aux administrateurs du data lake de gérer les ressources (buckets, Glue, etc.)
+  DataLakeAdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-admin-role-${Environment}'
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      
+      ManagedPolicyArns:
+        # Politique gérée par AWS pour l'administration complète
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  # ----------------------------------------------------------
+  # DATA ENGINEER ROLE
+  # Permet aux data engineers de gérer les jobs Glue et les tables Athena, mais pas les buckets S3
+  DataEngineerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-data-engineer-role-${Environment}'
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      
+      ManagedPolicyArns:
+        # Politique gérée par AWS pour les tâches Glue
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+      
+      Policies:
+        - PolicyName: DataEngineerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Lecture et écriture sur Raw (upload datas brutes) 
+              - Effect: Allow
+                Action: 
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt RawBucket.Arn
+                  - !Sub '${RawBucket.Arn}/*'
+              # Lecture et écriture sur processed et curated (gérer les résultats des jobs Glue)
+              - Effect: Allow
+                Action: 
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ProcessedBucket.Arn
+                  - !Sub '${ProcessedBucket.Arn}/*'
+                  - !GetAtt CuratedBucket.Arn
+                  - !Sub '${CuratedBucket.Arn}/*'
+              # Accès complet à Glue pour gérer les jobs ETL
+              - Effect: Allow
+                Action: glue:*
+                Resource: '*'
+
+  # ----------------------------------------------------------
+  # DATA ANALYST ROLE
+  # Permet aux data analysts de lire les données dans Curated et d'exécuter des requêtes Athena, mais pas de modifier les données ou les jobs Glue
+  DataAnalystRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-data-analyst-role-${Environment}'
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      
+      ManagedPolicyArns:
+        # Politique gérée par AWS pour les tâches Glue (pour accéder aux tables Athena créées par Glue)
+        - arn:aws:iam::aws:policy/AmazonAthenaFullAccess
+      
+      Policies:
+        - PolicyName: DataAnalystAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Lecture uniquement sur curated
+              - Effect: Allow
+                Action: 
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt CuratedBucket.Arn
+                  - !Sub '${CuratedBucket.Arn}/*'
+              # Athena results bucket : peut lire les résultats des requêtes
+              - Effect: Allow
+                Action: 
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt AthenaResultsBucket.Arn
+                  - !Sub '${AthenaResultsBucket.Arn}/*'
+              # Athena : peut lancer des requêtes SQL
+              - Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                  - athena:StopQueryExecution
+                Resource: '*'
+              # Quicksight : peut créer des tableaux de bord basés sur les données Athena
+              - Effect: Allow
+                Action:
+                  - quicksight:DescribeUser
+                  - quicksight:ListDashboards
+                  - quicksight:CreateDashboard
+                  - quicksight:GetDashboardEmbedUrl
+                Resource: '*'
