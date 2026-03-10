@@ -8,6 +8,11 @@ Projet académique — ESGI — Introduction au Cloud AWS
 
 Mise en place d'un **data lake simple sur AWS** autour de données publiques sur la santé mentale (Kaggle / OSMI).
 
+Ce data lake illustre la capacité à stocker et traiter des données **hétérogènes** :
+- Données structurées (CSV)
+- Données non structurées vidéo (MP4)
+- Données non structurées audio (MP3)
+
 Le pipeline ingère des données brutes CSV, les transforme via AWS Glue, les stocke dans une architecture en 3 couches (Raw → Processed → Curated), puis les expose à Amazon Athena pour des analyses SQL et Amazon QuickSight pour la visualisation.
 
 ---
@@ -15,7 +20,7 @@ Le pipeline ingère des données brutes CSV, les transforme via AWS Glue, les st
 ## Architecture
 
 ```
-Source (CSV — Kaggle)
+Source (CSV / MP3 / MP4)
         │
         ▼ Upload manuel
 ┌────────────────────────────────────────────────────────────┐
@@ -64,6 +69,9 @@ aws-data-lake/
 │   │   └── Mental_Health_Lifestyle_Dataset.csv
 │   └── mental-health-diagnosis/
 │       └── mental_health_diagnosis_treatment_.csv
+|   └── videos /
+|        └── Bruno_Falissard_SanteMentale.mp4
+|        └── Pourquoi la santé mentale explose aujourd'hui.mp3
 │
 ├── glue/                    # Scripts ETL AWS Glue
 │   ├── etl_job.py           # Script PySpark nettoyage + Parquet
@@ -86,12 +94,12 @@ aws-data-lake/
 ### Bucket Raw — `datalake-raw-dev-groupe1`
 ```
 datalake-raw-dev-groupe1/
-├── survey/
-│   └── survey.csv
-├── mental-health-lifestyle/
-│   └── Mental_Health_Lifestyle_Dataset.csv
-└── mental-health-diagnosis/
-    └── mental_health_diagnosis_treatment_.csv
+├── survey/csv/survey.csv
+├── mental-health-lifestyle/csv/Mental_Health_Lifestyle_Dataset.csv
+├── mental-health-diagnosis/csv/mental_health_diagnosis_treatment_.csv
+└── videos/
+    ├── Bruno_Fallisard_SanteMentale.mp4
+    └── Pourquoi la santé mentale explose aujourd'hui.mp3
 ```
 
 ### Bucket Processed — `datalake-processed-dev-groupe1`
@@ -147,6 +155,8 @@ datalake-athena-results-dev-groupe1/
 | `survey.csv` | Kaggle / OSMI | Enquête santé mentale en entreprise tech — traitement, pays, âge, travail remote | ~1 200 |
 | `Mental_Health_Lifestyle_Dataset.csv` | Kaggle | Habitudes de vie et santé mentale 2019-2024 — stress, sommeil, activité physique | ~10 000+ |
 | `mental_health_diagnosis_treatment_.csv` | Kaggle | Suivi de diagnostics et traitements santé mentale | ~10 000+ |
+| MP4 | `Bruno_Fallisard_SanteMentale.mp4` | YouTube | Conférence vidéo santé mentale |
+| MP3 | `Pourquoi la santé mentale explose aujourd'hui.mp3` | YouTube | Podcast audio santé mentale |
 
 ---
 
