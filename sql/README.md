@@ -1,57 +1,77 @@
-# SQL — Requêtes Athena & KPIs
+# Analytics & Reporting — Amazon Athena
 
-Ce dossier contient les requêtes SQL exécutées sur Amazon Athena.
+## Objective
 
----
+The objective of this step was to perform **data analysis on the Data Lake** using **Amazon Athena**.  
+Athena allows running **SQL queries directly on data stored in Amazon S3**, without requiring a traditional database system.
 
-## Objectif
-
-Interroger les données du bucket S3 Curated via **Amazon Athena**
-pour calculer des KPIs sur la santé mentale et alimenter les
-dashboards QuickSight.
+The tables used for the analysis were previously detected by **AWS Glue Crawler** and registered in the **Glue Data Catalog**, making them accessible from Athena.
 
 ---
 
-## Étapes à suivre
+## Analytical Queries
 
-### Pré-requis
-- La sandbox AWS Academy doit être active
-- Le Glue Crawler Curated doit avoir été exécuté
-- Les tables doivent être visibles dans le Glue Data Catalog
+Several **Key Performance Indicators (KPIs)** were calculated in order to explore the mental health datasets.
 
----
+### KPIs generated
 
-### Étape 1 — Configurer Athena
+- Total number of participants in the survey dataset
+- Distribution of mental health treatments
+- Impact of mental health on work performance
+- Distribution of mental health diagnoses
+- Average stress level depending on mental health condition
 
-### Étape 2 — Sélectionner la base de données
+These analyses demonstrate how Athena can be used to perform **aggregations, counts and statistical calculations directly on S3 datasets**.
 
-### Étape 3 — Tester avec une requête simple
-
-Avant de lancer les KPIs, vérifier que les données sont bien accessibles :
-
-Prendre un **screenshot** du résultat → `screenshots/04-analytics/`
-
-### Étape 4 — Lancer les requêtes KPIs
-
-Les requêtes sont disponibles dans le fichier `kpis.sql`.
-Les copier-coller dans l'éditeur Athena et les exécuter une par une.
+The SQL queries used for these analyses are available in: sql/kpis.sql
 
 ---
 
-### Étape 5 — Connecter QuickSight à Athena
+## Athena Query Execution
+
+The queries were executed in the **Amazon Athena console**.
+
+Athena reads the schema from the **Glue Data Catalog** and executes SQL queries on the datasets stored in the **Curated layer of the Data Lake**.
+
+The results of the queries are automatically stored in the S3 bucket configured for Athena query results.
 
 ---
 
-## Screenshots à prendre
+## Screenshots
 
-| Fichier | Contenu |
-|---|---|
-| `001-athena-settings.png` | Configuration du bucket de résultats |
-| `002-athena-tables.png` | Tables visibles dans le Data Catalog |
-| `003-athena-query-result.png` | Résultat d'une requête KPI |
-| `004-quicksight-dataset.png` | Dataset connecté à Athena |
-| `005-quicksight-dashboard.png` | Dashboard final avec visualisations |
+Screenshots showing the execution of the queries and their results are available in: screenshots/04-analytics
+
+These screenshots illustrate the KPIs generated using Athena.
 
 ---
 
-*Projet académique — ESGI — Introduction au Cloud AWS — Mars 2026*
+## Visualization
+
+The architecture includes **Amazon QuickSight** to create dashboards based on Athena queries.
+
+However, due to permission restrictions in the **AWS Academy sandbox environment**, QuickSight could not be fully configured.
+
+Despite this limitation, the analytical layer of the data lake remains compatible with visualization tools such as:
+
+- Amazon QuickSight
+- Power BI
+- Excel
+
+These tools can easily connect to Athena results to create dashboards and visualizations.
+
+---
+
+## Role in the Data Lake Architecture
+
+This step represents the **Analytics layer** of the Data Lake architecture.
+
+Pipeline overview:
+S3 Curated Layer
+↓
+Glue Data Catalog
+↓
+Amazon Athena
+↓
+KPIs & Analytics
+
+This layer transforms the stored data into **actionable insights through SQL-based analysis**.
