@@ -66,15 +66,16 @@ aws-data-lake/
 │       └── mental_health_diagnosis_treatment_.csv
 │
 ├── glue/                    # Scripts ETL AWS Glue
-│   ├── etl_job.py           # Script PySpark nettoyage + Parquet
-│   └── partition_job.py     # Script partitionnement couche Curated
+│   ├── README.md
 │
 ├── sql/                     # Requêtes Athena
 │   └── kpis.sql             # Requêtes KPIs et analyses
+|   └── README.md
 │
 ├── screenshots/             # Captures console AWS (pour le rapport)
 │
 ├── report/                  # Rapport écrit du projet
+|   └── AWS_datalake_Report.pdf
 │
 └── README.md                # Ce fichier
 ```
