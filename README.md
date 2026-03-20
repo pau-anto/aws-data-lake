@@ -205,7 +205,6 @@ cd aws-data-lake
 - Les sandboxes se **réinitialisent** à chaque session — relancer CloudFormation si besoin
 - Les rôles IAM ne peuvent pas être créés via CloudFormation → utiliser le rôle **`LabRole`** fourni
 - Rester sur la région **`us-east-1`** pour tous les services
-- Surveiller les coûts Athena — chaque requête scanne des données (utiliser les partitions)
 
 ---
 
